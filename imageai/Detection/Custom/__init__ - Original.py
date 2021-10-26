@@ -168,10 +168,10 @@ class DetectionModelTrainer:
         """
 
         # Remove cache files
-        if os.path.isfile(self.__train_cache_file):
+        if os.path.isfile(self.__train_cache_file) == True:
             os.remove(self.__train_cache_file)
 
-        if os.path.isfile(self.__validation_cache_file):
+        if os.path.isfile(self.__validation_cache_file) == True:
             os.remove(self.__validation_cache_file)
 
         self.__model_anchors, self.__inference_anchors = generateAnchors(self.__train_annotations_folder,
@@ -605,9 +605,9 @@ class DetectionModelTrainer:
 
 
 class CustomObjectDetection:
+
     """
-    This is the object detection class for using your custom trained models. It supports your custom trained YOLOv3
-    model and allows to you to perform object detection in images.
+    This is the object detection class for using your custom trained models. It supports your custom trained YOLOv3 model and allows to you to perform object detection in images.
     """
 
     def __init__(self):
@@ -624,31 +624,36 @@ class CustomObjectDetection:
 
     def setModelTypeAsYOLOv3(self):
         """
-        Sets the custom detection model as YOLOv3
+        'setModelTypeAsYOLOv3' is used to set your custom detection model as YOLOv3
+        :return:
         """
         self.__model_type = "yolov3"
 
     def setModelPath(self, detection_model_path):
         """
-        Specifies the filepath to your custom detection model
-        * detection_model_path: The .h5 model file path. Usually is one of those under
-          <data_directory>/models/detection_model-ex-ddd--loss-dddd.ddd.h5
+        'setModelPath' is used to specify the filepath to your custom detection model
+        :param detection_model_path: path to the .h5 model file.
+            Usually is one of those under <data_directory>/models/detection_model-ex-ddd--loss-dddd.ddd.h5
+        :return: None
         """
         self.__model_path = detection_model_path
 
     def setJsonPath(self, configuration_json):
         """
-        Sets the configuration JSON file path for the custom detection model
-        * configuration_json: .json file path. Usually it is <data_directory>/json/detection_config.json
+        'setJsonPath' is used to set the filepath to the configuration JSON file for your custom detection model
+        :param configuration_json: path to the .json file. Usually it is <data_directory>/json/detection_config.json
+        :return: None
         """
         self.__detection_config_json_path = configuration_json
 
     def loadModel(self):
-        """
-        Loads the model into the CustomObjectDetection class
-        """
-        if self.__model_type == "yolov3":
 
+        """
+        'loadModel' is used to load the model into the CustomObjectDetection class
+        :return: None
+        """
+
+        if self.__model_type == "yolov3":
             detection_model_json = json.load(open(self.__detection_config_json_path))
 
             self.__model_labels = detection_model_json["labels"]
@@ -660,117 +665,104 @@ class CustomObjectDetection:
 
             self.__model.load_weights(self.__model_path)
 
-    def detectObjectsFromImage(self
-                               , input_image=""
-                               , output_image_path=""
-                               , input_type="file"
-                               , output_type="file"
-                               , extract_detected_objects=False
-                               , minimum_percentage_probability=50
-                               , nms_threshold=0.4
-                               , display_percentage_probability=True
-                               , display_object_name=True
-                               , thread_safe=False
-                               , region_of_interest=None):
+    def detectObjectsFromImage(self, input_image="", output_image_path="", input_type="file", output_type="file",
+                               extract_detected_objects=False, minimum_percentage_probability=50, nms_treshold=0.4,
+                               display_percentage_probability=True, display_object_name=True, thread_safe=False):
 
         """
-        This function is used to detect objects observable in the given image
 
-        * input_image: Can be a filepath or image numpy array in BGR
-        * output_image_path: File path to the output image that will contain the detection boxes and label,
-          if output_type = "file"
-        * input_type: Filepath/numpy array of the image. Acceptable values are "file" and "array"
-        * output_type: File path/numpy array/image file stream of the image. Acceptable values are "file" and "array"
-        * extract_detected_objects: Option to save each object detected individually as an image and return an array of
-          the objects' image path.  TODO confirm phrasing is valid
-        * minimum_percentage_probability: Option to set the minimum percentage probability for nominating a detected
-          object for output.
-        * nms_threshold: Option to set the Non-maximum suppression for the detection.
-        * display_percentage_probability: Option to show or hide the percentage probability of each object in the
-          saved/returned detected image
-        * display_display_object_name: Option to show or hide the name of each object in the saved/returned detected
-          image
-        * thread_safe: Enforce that the loaded detection model works across all threads if set to true, made possible by
-          forcing all Keras inference to be run on the default graph
+        'detectObjectsFromImage()' function is used to detect objects observable in the given image:
+                    * input_image , which can be a filepath or image numpy array in BGR
+                    * output_image_path (only if output_type = file) , file path to the output image that will contain the detection boxes and label, if output_type="file"
+                    * input_type (optional) , filepath/numpy array of the image. Acceptable values are "file" and "array"
+                    * output_type (optional) , file path/numpy array/image file stream of the image. Acceptable values are "file" and "array"
+                    * extract_detected_objects (optional) , option to save each object detected individually as an image and return an array of the objects' image path.
+                    * minimum_percentage_probability (optional, 30 by default) , option to set the minimum percentage probability for nominating a detected object for output.
+                    * nms_threshold (optional, o.45 by default) , option to set the Non-maximum suppression for the detection
+                    * display_percentage_probability (optional, True by default), option to show or hide the percentage probability of each object in the saved/returned detected image
+                    * display_display_object_name (optional, True by default), option to show or hide the name of each object in the saved/returned detected image
+                    * thread_safe (optional, False by default), enforce the loaded detection model works across all threads if set to true, made possible by forcing all Keras inference to run on the default graph
 
 
-        The values returned by this function depends on the parameters parsed. There are four different return
-        configurations currently implemented.
+            The values returned by this function depends on the parameters parsed. The possible values returnable
+            are stated as below
+            - If extract_detected_objects = False or at its default value and output_type = 'file' or
+                at its default value, you must parse in the 'output_image_path' as a string to the path you want
+                the detected image to be saved. Then the function will return:
+                1. an array of dictionaries, with each dictionary corresponding to the objects
+                    detected in the image. Each dictionary contains the following property:
+                    * name (string)
+                    * percentage_probability (float)
+                    * box_points (list of x1,y1,x2 and y2 coordinates)
 
-        - If extract_detected_objects = False and output_type = 'file', note that you must parse in the
-          'output_image_path' as a string to the path you want the detected image to be saved.
+            - If extract_detected_objects = False or at its default value and output_type = 'array' ,
+              Then the function will return:
 
-          The function will return:
-          1. An array of dictionaries, with each dictionary corresponding to the objects detected in the image. Each
-             dictionary contains the following property:
-             * name (string)
-             * percentage_probability (float)
-             * box_points (list of x1,y1,x2, and y2 coordinates)
+                1. a numpy array of the detected image
+                2. an array of dictionaries, with each dictionary corresponding to the objects
+                    detected in the image. Each dictionary contains the following property:
+                    * name (string)
+                    * percentage_probability (float)
+                    * box_points (list of x1,y1,x2 and y2 coordinates)
 
-        - If extract_detected_objects = False and output_type = 'array'
+            - If extract_detected_objects = True and output_type = 'file' or
+                at its default value, you must parse in the 'output_image_path' as a string to the path you want
+                the detected image to be saved. Then the function will return:
+                1. an array of dictionaries, with each dictionary corresponding to the objects
+                    detected in the image. Each dictionary contains the following property:
+                    * name (string)
+                    * percentage_probability (float)
+                    * box_points (list of x1,y1,x2 and y2 coordinates)
+                2. an array of string paths to the image of each object extracted from the image
 
-          The function will return:
-          1. a numpy array of the detected image
-          2. an array of dictionaries, with each dictionary corresponding to the objects detected in the image. Each
-             dictionary contains the following property:
-             * name (string)
-             * percentage_probability (float)
-             * box_points (list of x1,y1,x2, and y2 coordinates)
+            - If extract_detected_objects = True and output_type = 'array', the the function will return:
+                1. a numpy array of the detected image
+                2. an array of dictionaries, with each dictionary corresponding to the objects
+                    detected in the image. Each dictionary contains the following property:
+                    * name (string)
+                    * percentage_probability (float)
+                    * box_points (list of x1,y1,x2 and y2 coordinates)
+                3. an array of numpy arrays of each object detected in the image
 
-        - If extract_detected_objects = True and output_type = 'file', note that you must parse in the
-          'output_image_path' as a string to the path you want the detected image to be saved.
-
-          The function will return:
-          1. An array of dictionaries, with each dictionary corresponding to the objects detected in the image. Each
-             dictionary contains the following property:
-             * name (string)
-             * percentage_probability (float)
-             * box_points (list of x1,y1,x2, and y2 coordinates)
-          2. An array of string paths to the image of each object extracted from the image
-
-        - If extract_detected_objects = True and output_type = 'array'.
-
-          The function will return:
-          1. A numpy array of the detected image
-          2. An array of dictionaries, with each dictionary corresponding to the objects detected in the image. Each
-             dictionary contains the following property:
-             * name (string)
-             * percentage_probability (float)
-             * box_points (list of x1,y1,x2, and y2 coordinates)
-          3. An array of numpy arrays of each object detected in the image
+        :param input_image:
+        :param output_image_path:
+        :param input_type:
+        :param output_type:
+        :param extract_detected_objects:
+        :param minimum_percentage_probability:
+        :param nms_treshold:
+        :param display_percentage_probability:
+        :param display_object_name:
+        :param thread_safe:
+        :return image_frame:
+        :return output_objects_array:
+        :return detected_objects_image_array:
         """
 
         if self.__model is None:
-            raise ValueError("You must call the loadModel() function before running the object detection method.")
+            raise ValueError("You must call the loadModel() function before making object detection.")
         else:
             if output_type == "file":
-                # TODO loop back to this
-                # Confirm with regex that the current input file is in the correct format and strip the suffix from the
-                # filename. Store this in the output image path.
-                output_image_folder, n_subs = re.subn(
-                    r'\.(?:jpe?g|png|tif|webp|PPM|PGM)$'
-                    , ''
-                    , output_image_path
-                    , flags=re.I
-                )
-
-                # If the regex method above did not make a substitution, throw an error as the output_image_path is in
-                # an invalid / unsupported format
+                # from the image file, lets keep the directory and the filename, but remove its  format
+                # if output_image_path is path/to/the/output/image.png
+                # then output_image_folder is  path/to/the/output/image
+                # let's check if it is in the appropriated format soon to fail early
+                output_image_folder, n_subs = re.subn(r'\.(?:jpe?g|png|tif|webp|PPM|PGM)$', '', output_image_path, flags=re.I)
                 if n_subs == 0:
-                    raise ValueError(f"output_image_path must be the path where to write the image."
-                                     f"Path provided: {output_image_path}"
-                                     f"\nEnsure that the file suffix is one of: "
-                                     f"['.jpg', '.png', '.tif', '.webp', '.PPM', '.PGM'].")
-
+                    # if no substitution was done, the given output_image_path is not in a supported format,
+                    # raise an error
+                    raise ValueError("output_image_path must be the path where to write the image. "
+                                     "Therefore it must end as one the following: "
+                                     "'.jpg', '.png', '.tif', '.webp', '.PPM', '.PGM'. {} found".format(output_image_path))
                 elif extract_detected_objects:
                     # Results must be written as files and need to extract detected objects as images,
                     # let's create a folder to store the object's images
                     objects_dir = output_image_folder + "-objects"
+
                     os.makedirs(objects_dir, exist_ok=True)
 
-            # Convert the threshold detection score [0, 100] into a probability [0, 1]
             self.__object_threshold = minimum_percentage_probability / 100
-            self.__nms_threshold = nms_threshold
+            self.__nms_threshold = nms_treshold
 
             output_objects_array = []
             detected_objects_image_array = []
@@ -780,7 +772,7 @@ class CustomObjectDetection:
             elif input_type == "array":
                 image = input_image
             else:
-                raise ValueError(f"input_type must be 'file' or 'array'. '{input_type}' was provided.")
+                raise ValueError("input_type must be 'file' or 'array'. {} found".format(input_type))
 
             image_frame = image.copy()
 
@@ -788,77 +780,51 @@ class CustomObjectDetection:
 
             image = cv2.resize(image, (self.__input_size, self.__input_size))
 
-            # The image is originally BGR-ordered. Convert this to RGB.
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-            # Scale the images from [0, 225] down to [0, 1]
             image = image.astype("float32") / 255.
 
-            # Add an additional dimension to the image to scale this into a 'batch'
+            # expand the image to batch
             image = np.expand_dims(image, 0)
 
             if self.__model_type == "yolov3":
-                if thread_safe:
+                if thread_safe == True:
                     with K.get_session().graph.as_default():
                         yolo_results = self.__model.predict(image)
                 else:
                     yolo_results = self.__model.predict(image)
 
-                boxes = []
+                boxes = list()
 
-                # Extract bounding box information for all detected objects with an objectness score > threshold
                 for idx, result in enumerate(yolo_results):
-                    box_set = self.__detection_utils.decode_netout(
-                        result[0]                                       # Remove the expanded dimension
-                        , self.__model_anchors[idx]
-                        , self.__object_threshold
-                        , self.__input_size
-                        , self.__input_size
-                    )
+                    box_set = self.__detection_utils.decode_netout(result[0], self.__model_anchors[idx],
+                                                                   self.__object_threshold, self.__input_size,
+                                                                   self.__input_size)
                     boxes += box_set
 
-                self.__detection_utils.correct_yolo_boxes(
-                    boxes
-                    , height
-                    , width
-                    , self.__input_size
-                    , self.__input_size
-                )
+                self.__detection_utils.correct_yolo_boxes(boxes, height, width, self.__input_size, self.__input_size)
 
-                self.__detection_utils.RoI(
-                    boxes
-                    , region_of_interest
-                )
+                self.__detection_utils.do_nms(boxes, self.__nms_threshold)
 
-                self.__detection_utils.do_nms(
-                    boxes
-                    , self.__nms_threshold
-                )
-
-                all_boxes, all_labels, all_scores = self.__detection_utils.get_boxes(
-                    boxes
-                    , self.__model_labels
-                    , self.__object_threshold
-                )
+                all_boxes, all_labels, all_scores = self.__detection_utils.get_boxes(boxes, self.__model_labels,
+                                                                                     self.__object_threshold)
 
                 for object_box, object_label, object_score in zip(all_boxes, all_labels, all_scores):
+                    each_object_details = dict()
+                    each_object_details["name"] = object_label
+                    each_object_details["percentage_probability"] = object_score
 
-                    output_objects_array.append(
-                        {'name': object_label
-                         , 'percentage_probability': object_score
-                         , 'box_points': [np.max(object_box.xmin, 0), np.max(object_box.ymin, 0), object_box.xmax, object_box.ymax]
-                         }
-                    )
+                    if object_box.xmin < 0:
+                        object_box.xmin = 0
+                    if object_box.ymin < 0:
+                        object_box.ymin = 0
 
-                drawn_image = self.__detection_utils.draw_boxes_and_caption(
-                    image_frame.copy()
-                    , all_boxes
-                    , all_labels
-                    , all_scores
-                    , region_of_interest
-                    , show_names=display_object_name
-                    , show_percentage=display_percentage_probability
-                )
+                    each_object_details["box_points"] = [object_box.xmin, object_box.ymin, object_box.xmax, object_box.ymax]
+                    output_objects_array.append(each_object_details)
+
+                drawn_image = self.__detection_utils.draw_boxes_and_caption(image_frame.copy(), all_boxes, all_labels,
+                                                                            all_scores, show_names=display_object_name,
+                                                                            show_percentage=display_percentage_probability)
 
                 if extract_detected_objects:
 
@@ -876,6 +842,7 @@ class CustomObjectDetection:
                             detected_objects_image_array.append(splitted_image.copy())
 
                 if output_type == "file":
+                    # we already validated that the output_image_path is a supported by OpenCV one
                     cv2.imwrite(output_image_path, drawn_image)
 
                 if extract_detected_objects:
@@ -945,14 +912,12 @@ class CustomVideoObjectDetection:
                                , display_percentage_probability=True
                                , display_object_name=True
                                , save_detected_video=True
-                               , performance_mode=False     # Only a minor improvement at the moment
                                , per_frame_function=None
                                , per_second_function=None
                                , per_minute_function=None
                                , video_complete_function=None
                                , return_detected_frame=False
-                               , detection_timeout=None
-                               , region_of_interest=None):
+                               , detection_timeout=None):
         """
         This function is used to detect objects observable in the given video path or a camera input
 
@@ -966,7 +931,6 @@ class CustomVideoObjectDetection:
         * display_percentage_probability: Used to show / hide  probability scores on the detected video frames.
         * display_object_name: Used to show / hide object names on the detected video frames.
         * save_detected_video: Choose whether to save the detected video.
-        * performance_mode: Performance mode means that
         * per_frame_function: This parameter allows you to parse in a function you will want to execute after each frame
           of the video is detected. If this parameter is set to a function, after every video frame is detected,
           the function will be executed with the following values parsed into it:
@@ -1033,6 +997,9 @@ class CustomVideoObjectDetection:
         # output_frames_dict:
         # output_frames_count_dict:
 
+
+
+
         output_frames_dict = {}
         output_frames_count_dict = {}
 
@@ -1044,7 +1011,14 @@ class CustomVideoObjectDetection:
         # TODO make file return type user-defined
         output_video_filepath = output_file_path + '.avi'
 
-        frame_width, frame_height, frames_per_second = self.extract_video_features(input_video)
+        # get(3): width
+        # get(4): height
+        # get(5): fps
+        # get(7): total frames
+
+        frame_width = int(input_video.get(3))
+        frame_height = int(input_video.get(4))
+        frames_per_second = int(input_video.get(5))
 
         output_video = cv2.VideoWriter(
             output_video_filepath
@@ -1053,25 +1027,14 @@ class CustomVideoObjectDetection:
             , (frame_width, frame_height)
         )
 
-        # Current video frame
+        # Current frame of video
         n_frame = 0
 
-        # Add a warning message for those that provide minimum probability scores that might be in the range [0, 1]
-        if minimum_percentage_probability < 1:
-            print(f"Warning: you entered a 'minimum_percentage_probability' equal to "
-                  f"{minimum_percentage_probability}%. If this was intended to be, "
-                  f"{100 * minimum_percentage_probability}%, then interrupt the script and rerun.")
-
-        if performance_mode:
-            print("Performance mode enabled. \n"
-                  "Note that this means that any user-specified detection timeout or per_xx_function are disabled, even"
-                  " if provided to the CustomVideoObjectDetection class.")
-        else:
-            detection_timeout_count = 0
+        detection_timeout_count = 0
+        video_frames_count = 0
 
         if self.__model_type == "yolov3":
 
-            # Iterate through each frame of the input video
             while input_video.isOpened():
 
                 # Read the next frame of the video
@@ -1079,129 +1042,100 @@ class CustomVideoObjectDetection:
 
                 if ret:
                     detected_frame = frame.copy()
+                    video_frames_count += 1
+
+                    # If the user specifies a detection time limit, then test to see if the current number of seconds
+                    # exceeds this threshold
+                    if detection_timeout:
+                        if (video_frames_count % frames_per_second) == 0:
+                            detection_timeout_count += 1
+                        if detection_timeout_count >= detection_timeout:
+                            break
+
+                    output_objects_array = []
                     n_frame += 1
 
                     if log_progress and n_frame % frame_detection_interval == 0:
                         print(f"Processing Frame: {n_frame}")
 
-                    if performance_mode:
-                        if n_frame == 1 or n_frame % frame_detection_interval == 0:
-                            try:
-                                detected_frame, output_objects_array = self.__detector.detectObjectsFromImage(
-                                    input_image=frame
-                                    , input_type="array"
-                                    , output_type="array"
-                                    , minimum_percentage_probability=minimum_percentage_probability
-                                    , display_percentage_probability=display_percentage_probability
-                                    , display_object_name=display_object_name
-                                    , region_of_interest=region_of_interest
-                                )
-                            except:
-                                print("Exception handled?")
-                                pass
+                    # Detect objects from image in the current frame
+                    if n_frame == 1 or n_frame % frame_detection_interval == 0:
+                        try:
+                            detected_frame, output_objects_array = self.__detector.detectObjectsFromImage(
+                                input_image=frame
+                                , input_type="array"
+                                , output_type="array"
+                                , minimum_percentage_probability=minimum_percentage_probability
+                                , display_percentage_probability=display_percentage_probability
+                                , display_object_name=display_object_name
+                            )
+                        except:
+                            pass
 
-                        detected_frame = self.add_region_of_interest_to_frame(detected_frame.copy(), region_of_interest)
+                    # Store the frame's bounding boxes in a dict
+                    output_frames_dict[n_frame] = output_objects_array
 
-                        # Write the frame to the output video
-                        if save_detected_video:
-                            output_video.write(detected_frame)
+                    output_objects_count = {}
+                    for eachItem in output_objects_array:
+                        try:
+                            output_objects_count[eachItem["name"]] = output_objects_count[eachItem["name"]] + 1
+                        except:
+                            output_objects_count[eachItem["name"]] = 1
 
-                    else:
-                        # If the user specifies a detection time limit, then test to see if the current number of
-                        # seconds exceeds this threshold
-                        if detection_timeout:
-                            if (n_frame % frames_per_second) == 0:
-                                detection_timeout_count += 1
-                            if detection_timeout_count >= detection_timeout:
-                                break
+                    output_frames_count_dict[n_frame] = output_objects_count
 
-                        output_objects_array = []
+                    # Write the frame to the output video
+                    if save_detected_video:
+                        output_video.write(detected_frame)
 
-                        # Detect objects from image in the current frame
-                        if n_frame == 1 or n_frame % frame_detection_interval == 0:
-                            try:
-                                detected_frame, output_objects_array = self.__detector.detectObjectsFromImage(
-                                    input_image=frame
-                                    , input_type="array"
-                                    , output_type="array"
-                                    , minimum_percentage_probability=minimum_percentage_probability
-                                    , display_percentage_probability=display_percentage_probability
-                                    , display_object_name=display_object_name
-                                    , region_of_interest=region_of_interest
-                                )
-                            except:
-                                print("Exception handled?")
-                                pass
+                    # True if a per_frame_function has been defined and the current frame is is set for detection
+                    if per_frame_function and (n_frame == 1 or n_frame % frame_detection_interval == 0):
+                        if return_detected_frame:
+                            per_frame_function(n_frame, output_objects_array, output_objects_count, detected_frame)
+                        else:
+                            per_frame_function(n_frame, output_objects_array, output_objects_count)
 
-                        # Store the frame's bounding boxes in a dict
-                        output_frames_dict[n_frame] = output_objects_array
+                    # True if a per_second_function has been defined and the frame is on-the-second
+                    if per_second_function and n_frame != 1 and n_frame % frames_per_second == 0:
 
-                        # Count up the instances of the each detected class
-                        output_objects_count = {}
+                        this_second_output_object_array = []
+                        this_second_counting_array = []
+                        this_second_counting = {}
 
-                        for eachItem in output_objects_array:
-                            try:
-                                # output_objects_count[eachItem["name"]] = output_objects_count[eachItem["name"]] + 1
-                                output_objects_count[eachItem["name"]] += 1
-                            except:
-                                output_objects_count[eachItem["name"]] = 1
+                        for idx in range(n_frame):
+                            if idx >= (n_frame - frames_per_second):
+                                this_second_output_object_array.append(output_frames_dict[idx + 1])
+                                this_second_counting_array.append(output_frames_count_dict[idx + 1])
 
-                        output_frames_count_dict[n_frame] = output_objects_count
+                        for eachCountingDict in this_second_counting_array:
+                            for eachItem in eachCountingDict:
+                                try:
+                                    this_second_counting[eachItem] = this_second_counting[eachItem] + eachCountingDict[eachItem]
+                                except:
+                                    this_second_counting[eachItem] = eachCountingDict[eachItem]
 
-                        detected_frame = self.add_region_of_interest_to_frame(detected_frame.copy(), region_of_interest)
+                        for eachCountingItem in this_second_counting:
+                            this_second_counting[eachCountingItem] = int(this_second_counting[eachCountingItem] / frames_per_second)
 
-                        # Write the frame to the output video
-                        if save_detected_video:
-                            output_video.write(detected_frame)
+                        if return_detected_frame:
+                            per_second_function(
+                                int(n_frame / frames_per_second)
+                                , this_second_output_object_array
+                                , this_second_counting_array
+                                , this_second_counting
+                                , detected_frame
+                            )
 
-                        # True if a per_frame_function has been defined and the current frame is is set for detection
-                        if per_frame_function and (n_frame == 1 or n_frame % frame_detection_interval == 0):
-                            if return_detected_frame:
-                                per_frame_function(n_frame, output_objects_array, output_objects_count, detected_frame)
-                            else:
-                                per_frame_function(n_frame, output_objects_array, output_objects_count)
+                        else:
+                            per_second_function(
+                                int(n_frame / frames_per_second)
+                                , this_second_output_object_array
+                                , this_second_counting_array
+                                , this_second_counting
+                            )
 
-                        # True if a per_second_function has been defined and the frame is on-the-second
-                        if per_second_function and n_frame != 1 and n_frame % frames_per_second == 0:
-
-                            this_second_output_object_array = []
-                            this_second_counting_array = []
-                            this_second_counting = {}
-
-                            for idx in range(n_frame):
-                                if idx >= (n_frame - frames_per_second):
-                                    this_second_output_object_array.append(output_frames_dict[idx + 1])
-                                    this_second_counting_array.append(output_frames_count_dict[idx + 1])
-
-                            for eachCountingDict in this_second_counting_array:
-                                for eachItem in eachCountingDict:
-                                    try:
-                                        this_second_counting[eachItem] = this_second_counting[eachItem] + eachCountingDict[eachItem]
-                                    except:
-                                        this_second_counting[eachItem] = eachCountingDict[eachItem]
-
-                            for eachCountingItem in this_second_counting:
-                                this_second_counting[eachCountingItem] = int(this_second_counting[eachCountingItem] / frames_per_second)
-
-                            if return_detected_frame:
-                                per_second_function(
-                                    int(n_frame / frames_per_second)
-                                    , this_second_output_object_array
-                                    , this_second_counting_array
-                                    , this_second_counting
-                                    , detected_frame
-                                )
-
-                            else:
-                                per_second_function(
-                                    int(n_frame / frames_per_second)
-                                    , this_second_output_object_array
-                                    , this_second_counting_array
-                                    , this_second_counting
-                                )
-
-                        # True if a per_minute_function has been defined and the frame is on-the-minute
-                        if per_minute_function and n_frame != 1 and n_frame % (frames_per_second * 60) == 0:
+                    # True if a per_minute_function has been defined and the frame is on-the-minute
+                    if per_minute_function and n_frame != 1 and n_frame % (frames_per_second * 60) == 0:
 
                             this_minute_output_object_array = []
                             this_minute_counting_array = []
@@ -1240,7 +1174,7 @@ class CustomVideoObjectDetection:
                                 )
 
                 else:
-                    # Each frame of the video has been processed
+                    # If each frame of the video has been processed
                     break
 
             # User-defined function to run after processing the video.
@@ -1275,35 +1209,6 @@ class CustomVideoObjectDetection:
 
             if save_detected_video:
                 return output_video_filepath
-
-    @staticmethod
-    def extract_video_features(input_video):
-        """
-        Extracts the frame width, height, and fps from the input video.
-        Note that this hasn't been tested with a livestream cameras which may require a change to the fps 'get' method
-
-        width: get(3)
-        height: get(4)
-        fps: get(5)
-        """
-        return int(input_video.get(3)), int(input_video.get(4)), int(input_video.get(5))
-
-    @staticmethod
-    def add_region_of_interest_to_frame(image_frame, region_of_interest):
-        """
-        Add a box identifying the detection region of interest
-        """
-
-        if region_of_interest:
-            return cv2.rectangle(
-                image_frame
-                , (region_of_interest[0], region_of_interest[2])  # xmin, ymin
-                , (region_of_interest[1], region_of_interest[3])  # xmax, ymax
-                , [0, 0, 0]
-                , 3
-            )
-        else:
-            return image_frame
 
 
 class BoundBox:
@@ -1346,58 +1251,48 @@ class CustomDetectionUtils:
         return 1. / (1. + np.exp(-x))
 
     def decode_netout(self, netout, anchors, obj_thresh, net_h, net_w):
-        """
-        This method takes the model predictions and returns all bounding boxes that have an objectness score above the
-        threshold.
-        """
-
-        grid_h, grid_w = netout.shape[:2]                           # Shape of the prediction TODO confirm?
-        nb_box = 3                                                  # Three r
-        netout = netout.reshape((grid_h, grid_w, nb_box, -1))       # Increase the dimensionality from (13, 13, 18) to (13, 13, 3, 6)
+        grid_h, grid_w = netout.shape[:2]
+        nb_box = 3
+        netout = netout.reshape((grid_h, grid_w, nb_box, -1))
         nb_class = netout.shape[-1] - 5
         boxes = []
-        netout[..., :2] = self._sigmoid(netout[..., :2])                        # First two columns
-        netout[..., 4:] = self._sigmoid(netout[..., 4:])                        # Remaining four columns
-        netout[..., 5:] = netout[..., 4][..., np.newaxis] * netout[..., 5:]     #  5: is the classification probability for each class
+        netout[..., :2] = self._sigmoid(netout[..., :2])
+        netout[..., 4:] = self._sigmoid(netout[..., 4:])
+        netout[..., 5:] = netout[..., 4][..., np.newaxis] * netout[..., 5:]
         netout[..., 5:] *= netout[..., 5:] > obj_thresh
 
         for row in range(grid_h):
             for col in range(grid_w):
                 for b in range(nb_box):
-                    # 4th element is objectness score. Objectness tells us how good the bounding box coverage is
+                    # 4th element is objectness score
                     objectness = netout[row, col, b, 4]
 
-                    if objectness > obj_thresh:
-                        # first 4 elements are x, y, w, and h. Note that x and y are the top-left coordinates of the bounding box # TODO work out why we scale the coords?
-                        x, y, w, h = netout[row, col, b, :4]
-                        x = (col + x) / grid_w  # center position, unit: image width
-                        y = (row + y) / grid_h  # center position, unit: image height
-                        w = anchors[2 * b + 0] * np.exp(w) / net_w  # unit: image width
-                        h = anchors[2 * b + 1] * np.exp(h) / net_h  # unit: image height
-                        # last elements are class probabilities
-                        classes = netout[row, col, b, 5:]
-                        boxes.append(BoundBox(x - w/2, y - h/2, x + w/2, y + h/2, objectness, classes))
+                    if objectness <= obj_thresh:
+                        continue
+
+                    # first 4 elements are x, y, w, and h
+                    x, y, w, h = netout[row, col, b, :4]
+                    x = (col + x) / grid_w  # center position, unit: image width
+                    y = (row + y) / grid_h  # center position, unit: image height
+                    w = anchors[2 * b + 0] * np.exp(w) / net_w  # unit: image width
+                    h = anchors[2 * b + 1] * np.exp(h) / net_h  # unit: image height
+                    # last elements are class probabilities
+                    classes = netout[row, col, b, 5:]
+                    box = BoundBox(x - w / 2, y - h / 2, x + w / 2, y + h / 2, objectness, classes)
+                    boxes.append(box)
 
         return boxes
 
     @staticmethod
     def correct_yolo_boxes(boxes, image_h, image_w, net_h, net_w):
-        """
-        Converts bounding box sizes to fix the original image from the resized (square) Yolo image.
-        """
-        new_w, new_h = net_w, net_h  # TODO Redundant? Remove after testing
+        new_w, new_h = net_w, net_h
         for i in range(len(boxes)):
             x_offset, x_scale = (net_w - new_w) / 2. / net_w, float(new_w) / net_w
             y_offset, y_scale = (net_h - new_h) / 2. / net_h, float(new_h) / net_h
-
-            if x_offset != 0 or y_offset != 0 or x_scale != 1 or y_scale != 1:
-                print("Warning: My correct_yolo_box offset and/or scale assumption was wrong?")
-                print(f"x-off {x_offset}, y-off {y_offset}, x-scale {x_scale}, y-scale {y_scale}")
-
-            boxes[i].xmin = int(boxes[i].xmin * image_w)
-            boxes[i].xmax = int(boxes[i].xmax * image_w)
-            boxes[i].ymin = int(boxes[i].ymin * image_h)
-            boxes[i].ymax = int(boxes[i].ymax * image_h)
+            boxes[i].xmin = int((boxes[i].xmin - x_offset) / x_scale * image_w)
+            boxes[i].xmax = int((boxes[i].xmax - x_offset) / x_scale * image_w)
+            boxes[i].ymin = int((boxes[i].ymin - y_offset) / y_scale * image_h)
+            boxes[i].ymax = int((boxes[i].ymax - y_offset) / y_scale * image_h)
 
     def _interval_overlap(self, interval_a, interval_b):
         x1, x2 = interval_a
@@ -1428,52 +1323,24 @@ class CustomDetectionUtils:
             return 0.0
 
     def do_nms(self, boxes, nms_thresh):
-        """
-        This function implements non-maxima suppression (nms) to find the intersection-over-union (iou) of returned
-        bounding boxes for a given frame. This ensures that the same object is not returned multiple times.
-        """
-        if len(boxes):
+        if len(boxes) > 0:
+            nb_class = len(boxes[0].classes)
+        else:
+            return
 
-            # Iterate over each class type
-            for c in range(len(boxes[0].classes)):
-                # Extract indices in descending order of class probability
-                sorted_indices = np.argsort([-box.classes[c] for box in boxes])
+        for c in range(nb_class):
+            sorted_indices = np.argsort([-box.classes[c] for box in boxes])
 
-                # Compare the IOU of box i with each box {i+1, .., n}
-                for i in range(len(sorted_indices)):
+            for i in range(len(sorted_indices)):
+                index_i = sorted_indices[i]
 
-                    # Enter if the class prediction > 0
-                    if boxes[sorted_indices[i]].classes[c]:
+                if boxes[index_i].classes[c] == 0: continue
 
-                        for j in range(i + 1, len(sorted_indices)):
+                for j in range(i + 1, len(sorted_indices)):
+                    index_j = sorted_indices[j]
 
-                            # If the nms threshold is exceeded, keep boxes[index_i] and remove boxes[index_j]
-                            if self.bbox_iou(boxes[sorted_indices[i]], boxes[sorted_indices[j]]) >= nms_thresh:
-                                boxes[sorted_indices[j]].classes[c] = 0
-
-    @staticmethod
-    def RoI(boxes, region_of_interest):
-        """
-        This function calculates the centre point of a bounding box and confirms that this is within the user-defined
-        region of interest (RoI) of the image. If the point lies outside of the RoI, then the box's class probability is
-        set to 0
-        """
-        if region_of_interest and len(region_of_interest) == 4:
-
-            for i in range(len(boxes)):
-
-                # Iterate over each class type
-                for c in range(len(boxes[0].classes)):
-
-                    # Enter if the class prediction > 0
-                    if boxes[i].classes[c]:
-
-                        x_centre = int((boxes[i].xmax + boxes[i].xmin) / 2)
-                        y_centre = int((boxes[i].ymax + boxes[i].ymin) / 2)
-
-                        if x_centre not in range(region_of_interest[0], region_of_interest[1]) \
-                                or y_centre not in range(region_of_interest[2], region_of_interest[3]):
-                            boxes[i].classes[c] = 0
+                    if self.bbox_iou(boxes[index_i], boxes[index_j]) >= nms_thresh:
+                        boxes[index_j].classes[c] = 0
 
     def get_boxes(self, boxes, labels, thresh):
         v_boxes, v_labels, v_scores = list(), list(), list()
@@ -1505,24 +1372,7 @@ class CustomDetectionUtils:
         else:
             return 0, 255, 0
 
-    def draw_boxes_and_caption(self
-                               , image_frame
-                               , v_boxes
-                               , v_labels
-                               , v_scores
-                               , region_of_interest
-                               , show_names=False
-                               , show_percentage=False):
-
-        # # Add a box identifying the detection region of interest
-        # if region_of_interest:
-        #     image_frame = cv2.rectangle(
-        #         image_frame
-        #         , (region_of_interest[0], region_of_interest[2])                # xmin, ymin
-        #         , (region_of_interest[1], region_of_interest[3])                # xmax, ymax
-        #         , [0, 0, 0]
-        #         , 3
-        #     )
+    def draw_boxes_and_caption(self, image_frame, v_boxes, v_labels, v_scores, show_names=False, show_percentage=False):
 
         for i in range(len(v_boxes)):
             box = v_boxes[i]

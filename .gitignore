@@ -50,3 +50,4 @@ coverage.xml
 
 # Working directory
 wd/
+imageai/Detection/Custom/masking.py
